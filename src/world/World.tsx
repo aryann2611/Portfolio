@@ -25,6 +25,10 @@ const hour = new Date().getHours();
 game.night = hour >= 19 || hour < 6; // visit after dark and the island is at night too
 game.nightMix = game.night ? 1 : 0;
 
+// Phones / few-core devices skip MSAA + ambient occlusion up front: far fewer shaders to compile and faster first frame.
+// ponytail: coarse heuristic; PerformanceMonitor still downgrades desktops at runtime.
+const LOW_END = matchMedia("(pointer: coarse)").matches || (navigator.hardwareConcurrency ?? 8) <= 4;
+
 export default function World() {
   const [started, setStarted] = useState(game.started);
   const [nearby, setNearby] = useState<Landmark | null>(null);
@@ -41,8 +45,8 @@ export default function World() {
   const [carUi, setCarUi] = useState<CarUi>({ near: false, driving: false });
   const [sunsetUi, setSunsetUi] = useState<SunsetUi>({ near: false, sitting: false });
   const [fading, setFading] = useState(false);
-  const [hq, setHq] = useState(true);
-  const [dpr, setDpr] = useState(Math.min(devicePixelRatio, 2));
+  const [hq, setHq] = useState(!LOW_END);
+  const [dpr, setDpr] = useState(Math.min(devicePixelRatio, LOW_END ? 1.25 : 2));
   /** 0 compiling shaders, 1 rendering first frames under the cover, 2 ready */
   const [stage, setStage] = useState(0);
   const grade = useRef<Grade>({ sat: null, bc: null, vig: null });
