@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent as RPointerEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronDown, Gem, Mail, MapPin, Moon, Play, Sun, Volume2, VolumeX, X } from "lucide-react";
+import { Camera, Check, ChevronDown, CloudRain, Gem, Mail, MapPin, Moon, Play, Sun, Volume2, VolumeX, X } from "lucide-react";
 import { GithubIcon } from "../components/icons/GithubIcon";
 import { LoadingBar, SCREEN, TitleBlock } from "../components/Splash";
 import { BEACH, FOREST, LAKE, LANDMARKS, MOUNTAIN, SHORE, game, type Landmark } from "./data";
@@ -57,9 +57,9 @@ export function Intro({ onStart, loading }: { onStart: () => void; loading: { la
   );
 }
 
-type TopBarProps = { orbs: number; night: boolean; muted: boolean; onNight: () => void; onMute: () => void };
+type TopBarProps = { orbs: number; night: boolean; muted: boolean; rain: boolean; onNight: () => void; onMute: () => void; onRain: () => void; onPhoto: () => void };
 
-export function TopBar({ orbs, night, muted, onNight, onMute }: TopBarProps) {
+export function TopBar({ orbs, night, muted, rain, onNight, onMute, onRain, onPhoto }: TopBarProps) {
   const round = `grid h-10 w-10 place-items-center rounded-full text-white/85 transition-colors hover:text-accent ${glass}`;
   return (
     <motion.header initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease }} className="pointer-events-none fixed inset-x-0 top-0 z-30 flex items-start justify-between p-4 md:p-6">
@@ -82,6 +82,12 @@ export function TopBar({ orbs, night, muted, onNight, onMute }: TopBarProps) {
         </motion.div>
         <button onClick={onNight} aria-label={night ? "Switch to day (N)" : "Switch to night (N)"} title="Day / night (N)" className={round}>
           {night ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+        <button onClick={onRain} aria-label="Toggle rain (R)" title="Rain (R)" className={`${round} ${rain ? "text-accent" : ""}`}>
+          <CloudRain size={16} />
+        </button>
+        <button onClick={onPhoto} aria-label="Save screenshot (P)" title="Photo (P)" className={round}>
+          <Camera size={16} />
         </button>
         <button onClick={onMute} aria-label={muted ? "Unmute (M)" : "Mute (M)"} title="Sound (M)" className={round}>
           {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
@@ -286,7 +292,7 @@ export function Controls() {
       <span className="flex items-center gap-1.5"><Key>Shift</Key> sprint · <Key>Space</Key> jump</span>
       <span className="flex items-center gap-1.5"><Key>E</Key> enter · click to walk</span>
       <span>drag to rotate · scroll to zoom</span>
-      <span className="flex items-center gap-1.5"><Key>N</Key> day / night · <Key>M</Key> sound</span>
+      <span className="flex items-center gap-1.5"><Key>N</Key> day / night · <Key>M</Key> sound · <Key>R</Key> rain · <Key>P</Key> photo</span>
     </motion.div>
   );
 }

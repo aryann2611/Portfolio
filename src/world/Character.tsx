@@ -2,7 +2,7 @@ import type { RefObject } from "react";
 import * as THREE from "three";
 
 export type Rig = { body: THREE.Group; head: THREE.Group; legL: THREE.Group; legR: THREE.Group; armL: THREE.Group; armR: THREE.Group };
-export type Look = { top: string; pants: string; skin: string; hair: string; shoes?: string; headphones?: boolean; backpack?: boolean; hat?: string; rod?: boolean };
+export type Look = { top: string; pants: string; skin: string; hair: string; shoes?: string; headphones?: boolean; backpack?: boolean; hat?: string; rod?: boolean; glasses?: string };
 
 export const damp = (a: number, b: number, rate: number, dt: number) => b + (a - b) * Math.exp(-rate * dt);
 export const dampAngle = (a: number, b: number, rate: number, dt: number) =>
@@ -62,6 +62,18 @@ export function Character({ look, rig }: { look: Look; rig: RefObject<Partial<Ri
         <capsuleGeometry args={[0.27, 0.36, 6, 16]} />
         <Mat c={look.top} />
       </mesh>
+      <mesh position={[0, 1.5, 0]} castShadow>
+        <cylinderGeometry args={[0.08, 0.09, 0.14, 12]} />
+        <Mat c={look.skin} />
+      </mesh>
+      <mesh position={[0, 1.41, 0]} rotation-x={Math.PI / 2} castShadow>
+        <torusGeometry args={[0.17, 0.045, 8, 20]} />
+        <Mat c={look.top} />
+      </mesh>
+      <mesh position={[0, 0.8, 0]} castShadow>
+        <cylinderGeometry args={[0.285, 0.285, 0.06, 20]} />
+        <meshStandardMaterial color="#3a2a1c" roughness={0.6} />
+      </mesh>
       {look.backpack && (
         <>
           <mesh position={[0, 1.42, -0.06]} rotation-x={-0.3} castShadow>
@@ -106,11 +118,70 @@ export function Character({ look, rig }: { look: Look; rig: RefObject<Partial<Ri
           <Mat c={look.hair} />
         </mesh>
         {[-0.09, 0.09].map((x) => (
-          <mesh key={x} position={[x, 0.01, 0.24]}>
-            <sphereGeometry args={[0.032, 10, 8]} />
-            <meshStandardMaterial color="#1a1a1a" roughness={0.3} />
+          <group key={x} position={[x, 0.01, 0.222]}>
+            <mesh scale={[1, 1.1, 0.6]}>
+              <sphereGeometry args={[0.044, 14, 10]} />
+              <meshStandardMaterial color="#fbfbf8" roughness={0.3} />
+            </mesh>
+            <mesh position={[0, 0, 0.018]}>
+              <sphereGeometry args={[0.027, 12, 10]} />
+              <meshStandardMaterial color="#2a1c12" roughness={0.2} />
+            </mesh>
+            <mesh position={[0.009, 0.01, 0.042]}>
+              <sphereGeometry args={[0.008, 8, 6]} />
+              <meshBasicMaterial color="#ffffff" />
+            </mesh>
+            <mesh position={[0, 0.07, 0.01]} rotation-z={x < 0 ? 0.12 : -0.12}>
+              <boxGeometry args={[0.07, 0.014, 0.02]} />
+              <Mat c={look.hair} />
+            </mesh>
+          </group>
+        ))}
+        <mesh position={[0, -0.04, 0.255]} scale={[0.8, 1, 0.9]} castShadow>
+          <sphereGeometry args={[0.03, 10, 8]} />
+          <Mat c={look.skin} />
+        </mesh>
+        <mesh position={[0, -0.1, 0.236]} rotation-z={Math.PI}>
+          <torusGeometry args={[0.05, 0.008, 6, 14, Math.PI * 0.8]} />
+          <meshStandardMaterial color="#7a3b32" roughness={0.5} />
+        </mesh>
+        {[-0.255, 0.255].map((x) => (
+          <mesh key={x} position={[x, -0.02, 0]} scale={[0.45, 1, 0.8]}>
+            <sphereGeometry args={[0.055, 10, 8]} />
+            <Mat c={look.skin} />
           </mesh>
         ))}
+        {/* fringe */}
+        <mesh position={[0, 0.14, 0.17]} rotation-x={0.5} scale={[1.5, 0.5, 0.8]}>
+          <sphereGeometry args={[0.12, 12, 8]} />
+          <Mat c={look.hair} />
+        </mesh>
+        {look.glasses && (
+          <group position={[0, 0.01, 0.255]}>
+            {[-0.09, 0.09].map((x) => (
+              <group key={x} position={[x, 0, 0]}>
+                <mesh>
+                  <torusGeometry args={[0.07, 0.011, 8, 24]} />
+                  <meshStandardMaterial color={look.glasses} metalness={0.7} roughness={0.25} />
+                </mesh>
+                <mesh position={[0, 0, -0.004]}>
+                  <circleGeometry args={[0.07, 20]} />
+                  <meshStandardMaterial color="#bfe6ff" transparent opacity={0.18} roughness={0} metalness={0.2} />
+                </mesh>
+              </group>
+            ))}
+            <mesh>
+              <boxGeometry args={[0.05, 0.012, 0.012]} />
+              <meshStandardMaterial color={look.glasses} metalness={0.7} roughness={0.25} />
+            </mesh>
+            {[-1, 1].map((d) => (
+              <mesh key={d} position={[d * 0.163, 0, -0.12]}>
+                <boxGeometry args={[0.012, 0.012, 0.25]} />
+                <meshStandardMaterial color={look.glasses} metalness={0.7} roughness={0.25} />
+              </mesh>
+            ))}
+          </group>
+        )}
         {look.hat && (
           <group position={[0, 0.2, 0]}>
             <mesh castShadow>

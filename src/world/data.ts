@@ -79,6 +79,11 @@ export const game = {
   night: false,
   /** 0 = day, 1 = night; eased towards `night` every frame */
   nightMix: 0,
+  /** treading water (set by Player) */
+  swimming: false,
+  rain: false,
+  /** 0..1 eased rain intensity */
+  rainMix: 0,
   /** sitting on the summit bench, watching the sunset */
   sitting: false,
   sitStart: 0,

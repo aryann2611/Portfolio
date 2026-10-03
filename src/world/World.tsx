@@ -10,11 +10,13 @@ import { Birds, Clouds, Grass, Island, Scenery, Water } from "./Terrain";
 import { Landmarks } from "./Landmarks";
 import { Player } from "./Player";
 import { Props } from "./Props";
+import { Rain } from "./Weather";
 import { DayNight } from "./DayNight";
 import { ORB_COUNT, Orbs, Particles, Villagers, fireworks } from "./Life";
 import { initAudio, setMuted as setAudioMuted, sfx } from "./audio";
 import { Cinematic, Controls, Intro, Joystick, Minimap, Panel, Prompt, QuestLog, RowingHint, Toast, TopBar, type Action, type ToastMsg } from "./Hud";
 import { Boat, boardBoat, boat, dockBoat, leaveBoat, type BoatUi } from "./Boat";
+import { Car, boardCar, car, leaveCar, type CarUi } from "./Car";
 import { Sunset, sit, stand, type SunsetUi } from "./Sunset";
 
 const FOG = "#e3c6a8";
@@ -33,11 +35,14 @@ export default function World() {
   const [toast, setToast] = useState<ToastMsg | null>(null);
   const [night, setNight] = useState(game.night);
   const [muted, setMuted] = useState(false);
+  const [rain, setRain] = useState(false);
+  const [shot, setShot] = useState(false);
   const [boatUi, setBoatUi] = useState<BoatUi>({ near: false, riding: false, canLeave: false });
+  const [carUi, setCarUi] = useState<CarUi>({ near: false, driving: false });
   const [sunsetUi, setSunsetUi] = useState<SunsetUi>({ near: false, sitting: false });
   const [fading, setFading] = useState(false);
   const [hq, setHq] = useState(true);
-  const [dpr, setDpr] = useState(Math.min(devicePixelRatio, 1.5));
+  const [dpr, setDpr] = useState(Math.min(devicePixelRatio, 2));
   /** 0 compiling shaders, 1 rendering first frames under the cover, 2 ready */
   const [stage, setStage] = useState(0);
   const grade = useRef<Grade>({ sat: null, bc: null, vig: null });
@@ -48,12 +53,14 @@ export default function World() {
   const openRef = useRef(open);
   const boatRef = useRef(boatUi);
   const benchRef = useRef(sunsetUi);
+  const carRef = useRef(carUi);
   useEffect(() => {
     nearbyRef.current = nearby;
     openRef.current = open;
     boatRef.current = boatUi;
     benchRef.current = sunsetUi;
-  }, [nearby, open, boatUi, sunsetUi]);
+    carRef.current = carUi;
+  }, [nearby, open, boatUi, sunsetUi, carUi]);
 
   const openPanel = useCallback((l: Landmark | null) => {
     if (l || openRef.current) sfx(l ? "open" : "close");
@@ -76,6 +83,21 @@ export default function World() {
     game.night = !game.night;
     setNight(game.night);
   }, []);
+  const toggleRain = useCallback(() => {
+    game.rain = !game.rain;
+    setRain(game.rain);
+  }, []);
+  const [snapCanvas, setSnapCanvas] = useState<HTMLCanvasElement | null>(null);
+  const photo = useCallback(() => {
+    if (!snapCanvas) return;
+    const a = document.createElement("a");
+    a.href = snapCanvas.toDataURL("image/png");
+    a.download = "island-snapshot.png";
+    a.click();
+    sfx("discover");
+    setShot(true);
+    setTimeout(() => setShot(false), 150);
+  }, [snapCanvas]);
   const toggleMute = useCallback(() => {
     setMuted((m) => {
       setAudioMuted(!m);
@@ -128,6 +150,8 @@ export default function World() {
     setFading(true);
     setTimeout(() => {
       if (boat.riding) dockBoat();
+      car.driving = false;
+      car.speed = 0;
       const p = frontOf(l);
       game.pos.set(p.x, 0, p.z);
       game.heading = Math.atan2(l.x - p.x, l.z - p.z);
@@ -139,11 +163,11 @@ export default function World() {
   };
 
   const walkTo = useCallback((p: Vector3) => {
-    if (!game.frozen && !boat.riding && !game.sitting) game.target = p.clone();
+    if (!game.frozen && !boat.riding && !car.driving && !game.sitting) game.target = p.clone();
   }, []);
 
   const selectLandmark = useCallback((l: Landmark) => {
-    if (!game.frozen && !boat.riding && !game.sitting) game.target = frontOf(l, 1.2);
+    if (!game.frozen && !boat.riding && !car.driving && !game.sitting) game.target = frontOf(l, 1.2);
   }, []);
 
   // keyboard
@@ -169,6 +193,12 @@ export default function World() {
       if (interact && benchRef.current.near) {
         e.preventDefault();
         sit();
+      } else if (interact && car.driving) {
+        e.preventDefault();
+        leaveCar();
+      } else if (interact && carRef.current.near) {
+        e.preventDefault();
+        boardCar();
       } else if (interact && boat.riding) {
         e.preventDefault();
         leaveBoat();
@@ -180,6 +210,8 @@ export default function World() {
         openPanel(nearbyRef.current);
       } else if (e.code === "KeyN") toggleNight();
       else if (e.code === "KeyM") toggleMute();
+      else if (e.code === "KeyR") toggleRain();
+      else if (e.code === "KeyP") photo();
       else if (MOVE_KEYS.includes(e.code)) {
         e.preventDefault();
         game.keys.add(e.code);
@@ -195,17 +227,21 @@ export default function World() {
       removeEventListener("keyup", up);
       removeEventListener("blur", blur);
     };
-  }, [openPanel, toggleNight, toggleMute]);
+  }, [openPanel, toggleNight, toggleMute, toggleRain, photo]);
 
   const LAKE_BLUE = "#38bdf8";
-  const action: Action | null = boatUi.riding
+  const action: Action | null = carUi.driving
+    ? { id: "park", title: "Get out of the car", sub: "Park here", color: "#d9503a", onClick: leaveCar }
+    : carUi.near
+      ? { id: "drive", title: "Drive the car", sub: "W/S gas · A/D steer · Shift boost", color: "#d9503a", onClick: boardCar }
+      : boatUi.riding
     ? boatUi.canLeave
       ? { id: "leave", title: "Leave the boat", sub: "Step onto land", color: LAKE_BLUE, onClick: leaveBoat }
       : { id: "row", title: "Row to the shore to get out", sub: "Whispering Lake", color: LAKE_BLUE }
     : sunsetUi.near
       ? { id: "sit", title: "Sit and watch the sunset", sub: "Summit Peak", color: "#ffb35c", onClick: sit }
       : boatUi.near
-      ? { id: "board", title: "Board the rowboat", sub: "Whispering Lake", color: LAKE_BLUE, onClick: boardBoat }
+      ? { id: "board", title: "Board the rowboat", sub: "Row anywhere, even out to sea", color: LAKE_BLUE, onClick: boardBoat }
       : nearby
         ? { id: nearby.id, title: `Enter ${nearby.name}`, sub: nearby.section, color: nearby.color, onClick: () => openPanel(nearby) }
         : null;
@@ -230,14 +266,15 @@ export default function World() {
           dpr={dpr}
           frameloop={stage === 0 ? "never" : open ? "demand" : "always"}
           camera={{ fov: 45, near: 0.1, far: 3000, position: [100, 50, 100] }}
-          gl={{ antialias: false, powerPreference: "high-performance" }}
+          gl={{ antialias: false, powerPreference: "high-performance", preserveDrawingBuffer: true }}
+          onCreated={({ gl }) => setSnapCanvas(gl.domElement)}
         >
           <Warmup stage={stage} onCompiled={compiled} onWarm={warmedUp} />
           <SunsetGrade grade={grade} />
           <PerformanceMonitor
             onDecline={() => {
               setHq(false);
-              setDpr(1);
+              setDpr(1.25);
             }}
           />
           <color attach="background" args={[FOG]} />
@@ -261,7 +298,9 @@ export default function World() {
           <Villagers />
           <Orbs collected={collected} onCollect={onCollect} />
           <Particles />
+          <Rain />
           <Boat onUi={setBoatUi} />
+          <Car onUi={setCarUi} />
           <Sunset onUi={setSunsetUi} />
           <Player onNearby={onNearby} onZone={onZone} />
 
@@ -292,7 +331,7 @@ export default function World() {
 
       {started && (
         <motion.div animate={{ opacity: sunsetUi.sitting ? 0 : 1 }} transition={{ duration: 1 }} className={sunsetUi.sitting ? "pointer-events-none" : ""}>
-          <TopBar orbs={collected.length} night={night} muted={muted} onNight={toggleNight} onMute={toggleMute} />
+          <TopBar orbs={collected.length} night={night} muted={muted} rain={rain} onNight={toggleNight} onMute={toggleMute} onRain={toggleRain} onPhoto={photo} />
           <QuestLog discovered={discovered} onTravel={travel} />
           <Minimap discovered={discovered} />
           <Controls />
@@ -302,6 +341,8 @@ export default function World() {
           <Prompt action={open ? null : action} />
         </motion.div>
       )}
+
+      <motion.div className="pointer-events-none fixed inset-0 z-[55] bg-white" initial={false} animate={{ opacity: shot ? 0.8 : 0 }} transition={{ duration: 0.15 }} />
 
       <Panel landmark={open} onClose={() => openPanel(null)} />
 

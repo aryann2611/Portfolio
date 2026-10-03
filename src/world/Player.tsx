@@ -1,20 +1,24 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { LANDMARKS, ZONES, game, type Landmark, type Zone } from "./data";
+import { LANDMARKS, WATER_Y, ZONES, game, type Landmark, type Zone } from "./data";
 import { BENCH, groundAt, heightAt, pushOut, walkable } from "./Terrain";
 import { Character, animateRig, damp, dampAngle, type Look, type Rig } from "./Character";
 import { sfx } from "./audio";
 import { boat } from "./Boat";
+import { car } from "./Car";
 
 const WALK = 5;
 const SPRINT = 9.5;
 const GRAVITY = 30;
 const JUMP = 10;
 const BODY_R = 0.45;
+const SWIM = 3.2;
+const SWIM_R = 200; // how far out to sea you can swim
+const canGo = (x: number, z: number) => walkable(x, z) || Math.hypot(x, z) < SWIM_R;
 
 const pressed = (...codes: string[]) => codes.some((c) => game.keys.has(c));
-const LOOK: Look = { top: "#e8934a", pants: "#2a2f45", skin: "#e0ac85", hair: "#2b2118", headphones: true, backpack: true };
+const LOOK: Look = { top: "#e8934a", pants: "#2a2f45", skin: "#e0ac85", hair: "#2b2118", headphones: true, backpack: true, glasses: "#1c1f2b" };
 const DAY_LIGHT = new THREE.Color("#ffd2a1");
 const SUNSET_LIGHT = new THREE.Color("#ff7a3d");
 const MOON_LIGHT = new THREE.Color("#9db4ff");
@@ -34,7 +38,17 @@ export function Player({ onNearby, onZone }: { onNearby: (l: Landmark | null) =>
     const st = s.current;
     const pos = game.pos;
 
-    if (boat.riding) {
+    root.current.visible = !car.driving;
+    if (car.driving) {
+      // behind the wheel: the car carries the camera and the interaction point
+      game.swimming = false;
+      pos.set(car.x, car.y, car.z);
+      game.heading = car.heading;
+      game.follow = Math.abs(car.speed) > 2;
+      st.vx = st.vz = st.jumpY = st.vy = 0;
+      st.grounded = true;
+    } else if (boat.riding) {
+      game.swimming = false;
       // seated in the rowboat: follow it, pull the oars
       pos.set(boat.x - Math.sin(boat.heading) * 0.1, boat.y, boat.z - Math.cos(boat.heading) * 0.1);
       game.heading = boat.heading;
@@ -108,25 +122,27 @@ export function Player({ onNearby, onZone }: { onNearby: (l: Landmark | null) =>
         [ix, iz] = [ix * c + iz * sn, -ix * sn + iz * c];
       }
       const len = Math.hypot(ix, iz);
-      const sprint = pressed("ShiftLeft", "ShiftRight") || toTarget > 7 || Math.hypot(game.joy.x, game.joy.y) > 0.9;
-      const speed = len ? (sprint ? SPRINT : WALK) * Math.min(len, 1) : 0;
+      const swim = game.swimming;
+      const sprint = !swim && pressed("ShiftLeft", "ShiftRight") || toTarget > 7 || Math.hypot(game.joy.x, game.joy.y) > 0.9;
+      const speed = len ? (swim ? SWIM : sprint ? SPRINT : WALK) * Math.min(len, 1) : 0;
       st.vx = damp(st.vx, len ? (ix / len) * speed : 0, 10, dt);
       st.vz = damp(st.vz, len ? (iz / len) * speed : 0, 10, dt);
 
       // --- move (per axis, so you slide along shorelines) + collide
       const nx = pos.x + st.vx * dt;
-      if (walkable(nx, pos.z)) pos.x = nx;
+      if (canGo(nx, pos.z)) pos.x = nx;
       else st.vx = 0;
       const nz = pos.z + st.vz * dt;
-      if (walkable(pos.x, nz)) pos.z = nz;
+      if (canGo(pos.x, nz)) pos.z = nz;
       else st.vz = 0;
       pushOut(pos, BODY_R);
+      game.swimming = !walkable(pos.x, pos.z);
       // give up on a click target we can't reach (blocked by a building or water)
       st.stuck = toTarget > 0 && Math.hypot(st.vx, st.vz) < 1 ? st.stuck + dt : 0;
       if (st.stuck > 0.6) game.target = null;
 
       // --- jump
-      if (pressed("Space") && st.grounded && !game.frozen) {
+      if (pressed("Space") && st.grounded && !game.frozen && !game.swimming) {
         st.vy = JUMP;
         st.grounded = false;
         sfx("jump");
@@ -143,7 +159,10 @@ export function Player({ onNearby, onZone }: { onNearby: (l: Landmark | null) =>
         st.vy = 0;
         st.grounded = true;
       }
-      pos.y = groundAt(pos.x, pos.z);
+      // wade in: sink to chest depth and bob; ease the transition so there's no pop
+      const swimY = WATER_Y - 1 + Math.sin(t * 2.4) * 0.05;
+      const floorY = groundAt(pos.x, pos.z);
+      pos.y = game.swimming ? damp(pos.y, swimY, 8, dt) : Math.abs(pos.y - floorY) > 0.05 && pos.y < floorY - 0.05 ? damp(pos.y, floorY, 8, dt) : floorY;
       root.current.position.set(pos.x, pos.y + st.jumpY, pos.z);
 
       // --- facing + animation
@@ -153,11 +172,22 @@ export function Player({ onNearby, onZone }: { onNearby: (l: Landmark | null) =>
       st.phase += hs * dt * 2.1;
       st.squash = damp(st.squash, 0, 9, dt);
       const r = rig.current as Rig;
-      if (r.body) animateRig(r, { speed: hs, phase: st.phase, grounded: st.grounded, lean: hs / SPRINT, squash: st.squash, t, dt, idleLook: true });
+      if (r.body) {
+        animateRig(r, { speed: hs, phase: st.phase, grounded: st.grounded, lean: hs / SPRINT, squash: st.squash, t, dt, idleLook: true });
+        if (game.swimming) {
+          // front-crawl arms, flutter kick, leaning into the water
+          const a = t * (hs > 0.3 ? 6 : 2.5);
+          r.armL.rotation.set(-2.4 + Math.sin(a) * 0.9, 0, -0.1);
+          r.armR.rotation.set(-2.4 - Math.sin(a) * 0.9, 0, 0.1);
+          r.legL.rotation.x = Math.sin(a * 2) * 0.35;
+          r.legR.rotation.x = -Math.sin(a * 2) * 0.35;
+          r.body.rotation.x = damp(r.body.rotation.x, 0.45, 8, dt);
+        }
+      }
 
       // --- footsteps: one sound per foot fall
       const step = Math.sign(Math.sin(st.phase));
-      if (st.grounded && hs > 1 && step !== st.step) sfx("step");
+      if (st.grounded && hs > 1 && step !== st.step) sfx(game.swimming ? "splash" : "step");
       st.step = step;
 
       // --- footstep dust when sprinting

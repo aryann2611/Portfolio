@@ -34,9 +34,15 @@ export const boat = {
 export type BoatUi = { near: boolean; riding: boolean; canLeave: boolean };
 
 /** Open water the boat may float on: deep enough and not under a pier. */
-const floatable = (x: number, z: number) => heightAt(x, z) < WATER_Y - 0.25 && deckAt(x, z) === null;
+const floatable = (x: number, z: number) => Math.hypot(x, z) < 260 && heightAt(x, z) < WATER_Y - 0.25 && deckAt(x, z) === null;
 
 export function boardBoat() {
+  // swimming? the boat comes to you, wherever you are (lake or open sea)
+  if (Math.hypot(game.pos.x - boat.x, game.pos.z - boat.z) > BOARD_DIST) {
+    boat.x = game.pos.x;
+    boat.z = game.pos.z;
+    boat.heading = game.heading;
+  }
   boat.riding = true;
   boat.speed = 0;
   game.target = null;
@@ -72,7 +78,8 @@ function findLanding() {
     }
     if (best) return best;
   }
-  return null;
+  // no shore nearby: slip into the water and swim
+  return new THREE.Vector3(boat.x + Math.sin(boat.heading) * 1.8, 0, boat.z + Math.cos(boat.heading) * 1.8);
 }
 
 const pressed = (...codes: string[]) => codes.some((c) => game.keys.has(c));
@@ -153,7 +160,7 @@ export function Boat({ onUi }: { onUi: (ui: BoatUi) => void }) {
     });
 
     // tell the HUD when the prompt should change
-    const near = !boat.riding && game.started && Math.hypot(game.pos.x - boat.x, game.pos.z - boat.z) < BOARD_DIST;
+    const near = !boat.riding && game.started && (game.swimming || Math.hypot(game.pos.x - boat.x, game.pos.z - boat.z) < BOARD_DIST);
     const ui = { near, riding: boat.riding, canLeave: !!boat.land };
     const key = `${ui.near}${ui.riding}${ui.canLeave}`;
     if (key !== st.ui) {
