@@ -95,7 +95,7 @@ export function TopBar({ orbs, night, muted, rain, onNight, onMute, onRain, onPh
         <a href="https://github.com/aryans2611" aria-label="GitHub" className={`hidden sm:grid ${round}`}>
           <GithubIcon size={16} />
         </a>
-        <a href="mailto:decodedna27@gmail.com" aria-label="Email" className={`hidden sm:grid ${round}`}>
+        <a href="mailto:aryans8095@gmail.com" aria-label="Email" className={`hidden sm:grid ${round}`}>
           <Mail size={16} />
         </a>
       </div>

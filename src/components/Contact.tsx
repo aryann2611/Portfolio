@@ -19,7 +19,7 @@ export function Contact() {
             and interesting problems.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <MagneticButton href="mailto:decodedna27@gmail.com" variant="solid">
+            <MagneticButton href="mailto:aryans8095@gmail.com" variant="solid">
               <Mail size={16} /> Say Hello
             </MagneticButton>
             <MagneticButton href="https://github.com/aryans2611" variant="outline">

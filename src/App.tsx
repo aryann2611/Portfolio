@@ -26,7 +26,7 @@ export default function App() {
             <a href="https://github.com/aryans2611" className="flex items-center gap-2 text-ink hover:text-accent">
               <GithubIcon size={16} /> GitHub
             </a>
-            <a href="mailto:decodedna27@gmail.com" className="flex items-center gap-2 text-ink hover:text-accent">
+            <a href="mailto:aryans8095@gmail.com" className="flex items-center gap-2 text-ink hover:text-accent">
               <Mail size={16} /> Email
             </a>
           </div>
