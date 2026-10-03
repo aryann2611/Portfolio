@@ -6,7 +6,7 @@ import { Bloom, BrightnessContrast, EffectComposer, HueSaturation, N8AO, ToneMap
 import { ToneMappingMode, type BrightnessContrastEffect, type HueSaturationEffect, type VignetteEffect } from "postprocessing";
 import type { Vector3 } from "three";
 import { LANDMARKS, frontOf, game, type Landmark, type Zone } from "./data";
-import { Birds, Clouds, Grass, Island, Scenery, Water } from "./Terrain";
+import { Birds, Clouds, Grass, Island, RoadMarkings, Scenery, Water } from "./Terrain";
 import { Landmarks } from "./Landmarks";
 import { Player } from "./Player";
 import { Props } from "./Props";
@@ -292,6 +292,7 @@ export default function World() {
           </Environment>
 
           <Island onGround={walkTo} />
+          <RoadMarkings />
           <Water />
           <Grass />
           <Scenery />

@@ -39,11 +39,16 @@ const PATHS: Seg[] = LANDMARKS.map((l) => {
   return { ax: (l.x / d) * 6, az: (l.z / d) * 6, bx: l.x - (l.x / d) * l.radius, bz: l.z - (l.z / d) * l.radius };
 });
 
-function pathDistExact(x: number, z: number) {
+/** Paved road network: a spoke from the plaza to every building, joined by a ring road. */
+const ROAD_W = 2.6; // half-width: the asphalt is 5.2 wide, comfortable for the car
+const RING = 24;
+
+const spokeDist = (x: number, z: number) => {
   let best = Infinity;
   for (const s of PATHS) best = Math.min(best, segDist(x, z, s).d);
   return best;
-}
+};
+const roadDistExact = (x: number, z: number) => Math.min(spokeDist(x, z), Math.abs(Math.hypot(x, z) - RING));
 
 function padDistExact(x: number, z: number) {
   let best = Infinity;
@@ -69,7 +74,8 @@ function heightExact(x: number, z: number, pd: number, pad: number) {
   const m = Math.exp(-((Math.hypot(x - MOUNTAIN.x, z - MOUNTAIN.z) / MOUNTAIN.r) ** 2));
   h += MOUNTAIN.h * m + (Math.sin(x * 0.5) * Math.cos(z * 0.45) + Math.sin(x * 0.9 + z * 0.7) * 0.5) * 1.2 * m;
   // flatten the plaza, the building pads and (partly) the paths
-  h *= Math.min(smooth(8, 14, d), smooth(1.5, 6, pad), 0.4 + 0.6 * smooth(1, 3.5, pd));
+  // (roads are dead flat so the car drives smoothly; `pd` is the distance from the road edge)
+  h *= Math.min(smooth(8, 14, d), smooth(1.5, 6, pad), smooth(0, 3.5, pd));
   // lake bowl
   h -= 3.4 * smooth(LAKE.r + 5, LAKE.r - 2, Math.hypot(x - LAKE.x, z - LAKE.z));
   // sink into the sea at the shore (gentler on the beach)
@@ -83,13 +89,14 @@ function heightExact(x: number, z: number, pd: number, pad: number) {
 
 const RES = 353; // grid points per side (= island mesh vertices)
 const STEP = MAP / (RES - 1);
-const H = new Float32Array(RES * RES), PD = new Float32Array(RES * RES), PAD = new Float32Array(RES * RES);
+const H = new Float32Array(RES * RES), RD = new Float32Array(RES * RES), PD = new Float32Array(RES * RES), PAD = new Float32Array(RES * RES);
 for (let j = 0, k = 0; j < RES; j++) {
   for (let i = 0; i < RES; i++, k++) {
     const x = -MAP / 2 + i * STEP, z = -MAP / 2 + j * STEP;
-    PD[k] = pathDistExact(x, z);
+    RD[k] = roadDistExact(x, z);
+    PD[k] = RD[k] - ROAD_W + 1.7; // keeps the old "path distance" meaning for scatter/grass: clear of the asphalt edge
     PAD[k] = padDistExact(x, z);
-    H[k] = heightExact(x, z, PD[k], PAD[k]);
+    H[k] = heightExact(x, z, RD[k] - ROAD_W, PAD[k]);
   }
 }
 
@@ -283,7 +290,7 @@ export function Island({ onGround }: { onGround: (p: THREE.Vector3) => void }) {
     const pos = g.attributes.position;
     const col = new Float32Array(pos.count * 3);
     const grassA = new THREE.Color("#4f8a37"), grassB = new THREE.Color("#8fb04a"), forest = new THREE.Color("#2f5e2a");
-    const dirt = new THREE.Color("#b08458"), pad = new THREE.Color("#9c8a6e"), stone = new THREE.Color("#bdb5a6");
+    const asphalt = new THREE.Color("#3b3e46"), curb = new THREE.Color("#d8d3c4"), dirt = new THREE.Color("#b08458"), pad = new THREE.Color("#9c8a6e"), stone = new THREE.Color("#bdb5a6");
     const sand = new THREE.Color("#e6cf9a"), wet = new THREE.Color("#9c8457"), rock = new THREE.Color("#8d8a84"), snow = new THREE.Color("#f4f6fb");
     const c = new THREE.Color();
     for (let i = 0; i < pos.count; i++) {
@@ -293,7 +300,9 @@ export function Island({ onGround }: { onGround: (p: THREE.Vector3) => void }) {
       const n = 0.5 + 0.5 * Math.sin(x * 0.21 + Math.sin(z * 0.13) * 2) * Math.cos(z * 0.17 - x * 0.05);
       c.copy(grassA).lerp(grassB, n * 0.8);
       c.lerp(forest, smooth(FOREST.r + 6, FOREST.r - 4, Math.hypot(x - FOREST.x, z - FOREST.z)) * 0.7);
-      c.lerp(dirt, smooth(1.9, 1.1, PD[i]));
+      c.lerp(dirt, smooth(ROAD_W + 1.1, ROAD_W + 0.3, RD[i]) * 0.6); // worn verge
+      c.lerp(asphalt, smooth(ROAD_W + 0.1, ROAD_W - 0.4, RD[i]));
+      c.lerp(curb, smooth(ROAD_W - 0.75, ROAD_W - 0.45, RD[i]) * smooth(ROAD_W - 0.05, ROAD_W - 0.35, RD[i])); // painted edge line
       c.lerp(pad, smooth(1.6, 0, PAD[i]));
       if (d < 8) {
         // plaza tiles: hash per cell for subtle variation
@@ -690,4 +699,32 @@ export function Birds() {
       ))}
     </>
   );
+}
+
+// --- road centre-line dashes ---------------------------------------------------
+
+export function RoadMarkings() {
+  const mx = useMemo(() => {
+    const out: THREE.Matrix4[] = [];
+    const ok = (x: number, z: number, skipRing: boolean, skipSpoke: boolean) =>
+      Math.hypot(x, z) > 8.6 && padDist(x, z) > 1.2 &&
+      (!skipRing || Math.abs(Math.hypot(x, z) - RING) > ROAD_W + 0.4) &&
+      (!skipSpoke || spokeDist(x, z) > ROAD_W + 0.4);
+    for (const sp of PATHS) {
+      const len = Math.hypot(sp.bx - sp.ax, sp.bz - sp.az), ux = (sp.bx - sp.ax) / len, uz = (sp.bz - sp.az) / len;
+      for (let t = 2; t < len - 1.5; t += 3.4) {
+        const x = sp.ax + ux * t, z = sp.az + uz * t;
+        if (ok(x, z, true, false)) out.push(mat4(x, 0.06, z, Math.atan2(ux, uz), 0.16, 1, 1.6));
+      }
+    }
+    const n = Math.round((2 * Math.PI * RING) / 3.4);
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2, x = Math.cos(a) * RING, z = Math.sin(a) * RING;
+      if (ok(x, z, false, true)) out.push(mat4(x, 0.06, z, Math.atan2(-Math.sin(a), Math.cos(a)), 0.16, 1, 1.6));
+    }
+    return out;
+  }, []);
+  const geo = useMemo(() => new THREE.BoxGeometry(1, 0.02, 1), []);
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#f3ead0", roughness: 0.6 }), []);
+  return <Instanced geometry={geo} material={mat} matrices={mx} shadow={false} />;
 }
