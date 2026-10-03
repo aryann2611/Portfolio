@@ -233,7 +233,7 @@ export default function World() {
   const action: Action | null = carUi.driving
     ? { id: "park", title: "Get out of the car", sub: "Park here", color: "#d9503a", onClick: leaveCar }
     : carUi.near
-      ? { id: "drive", title: "Drive the car", sub: "W/S gas · A/D steer · Shift boost", color: "#d9503a", onClick: boardCar }
+      ? { id: "drive", title: "Drive the car", sub: "W/S gas Â· A/D steer Â· Shift boost", color: "#d9503a", onClick: boardCar }
       : boatUi.riding
     ? boatUi.canLeave
       ? { id: "leave", title: "Leave the boat", sub: "Step onto land", color: LAKE_BLUE, onClick: leaveBoat }
