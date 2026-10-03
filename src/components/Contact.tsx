@@ -22,7 +22,7 @@ export function Contact() {
             <MagneticButton href="mailto:aryans8095@gmail.com" variant="solid">
               <Mail size={16} /> Say Hello
             </MagneticButton>
-            <MagneticButton href="https://github.com/aryans2611" variant="outline">
+            <MagneticButton href="https://github.com/aryann2611" variant="outline">
               <GithubIcon size={16} /> GitHub
             </MagneticButton>
           </div>

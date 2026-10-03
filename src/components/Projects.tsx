@@ -13,7 +13,7 @@ export function Projects() {
             This section is being prepared — case studies will be added
             here shortly. In the meantime, see ongoing work on{" "}
             <a
-              href="https://github.com/aryans2611"
+              href="https://github.com/aryann2611"
               className="text-accent underline underline-offset-4"
             >
               GitHub

@@ -96,4 +96,4 @@ Static build (`dist/`) served by Cloudflare Workers with static assets at the UR
 
 ## Contact
 
-[aryans8095@gmail.com](mailto:aryans8095@gmail.com) · [GitHub](https://github.com/aryans2611)
+[aryans8095@gmail.com](mailto:aryans8095@gmail.com) · [GitHub](https://github.com/aryann2611)

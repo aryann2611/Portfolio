@@ -92,7 +92,7 @@ export function TopBar({ orbs, night, muted, rain, onNight, onMute, onRain, onPh
         <button onClick={onMute} aria-label={muted ? "Unmute (M)" : "Mute (M)"} title="Sound (M)" className={round}>
           {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
         </button>
-        <a href="https://github.com/aryans2611" aria-label="GitHub" className={`hidden sm:grid ${round}`}>
+        <a href="https://github.com/aryann2611" aria-label="GitHub" className={`hidden sm:grid ${round}`}>
           <GithubIcon size={16} />
         </a>
         <a href="mailto:aryans8095@gmail.com" aria-label="Email" className={`hidden sm:grid ${round}`}>

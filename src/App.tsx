@@ -23,7 +23,7 @@ export default function App() {
           </h1>
           <p className="mt-3 text-muted">This portfolio is a 3D world and needs a browser with WebGL 2.</p>
           <div className="mt-6 flex justify-center gap-4 font-mono text-sm">
-            <a href="https://github.com/aryans2611" className="flex items-center gap-2 text-ink hover:text-accent">
+            <a href="https://github.com/aryann2611" className="flex items-center gap-2 text-ink hover:text-accent">
               <GithubIcon size={16} /> GitHub
             </a>
             <a href="mailto:aryans8095@gmail.com" className="flex items-center gap-2 text-ink hover:text-accent">
