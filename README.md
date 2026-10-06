@@ -45,7 +45,7 @@ It is a frontend-only project: no backend, database or authentication.
 
 ## Getting started
 
-Requires Node.js 18+ and a browser with WebGL 2.
+Requires Node.js 20.19+ (or 22.12+) and a browser with WebGL 2.
 
 ```bash
 npm install
@@ -85,7 +85,7 @@ src/world/            the 3D world
 
 ## Deployment
 
-Static build (`dist/`) served by Cloudflare Workers with static assets at the URL above. The deploy settings live in Cloudflare, not in this repository. GitHub Actions (`.github/workflows/webpack.yml`) runs `npm ci && npm run build` on Node 18/20/22 as a build check.
+Static build (`dist/`) served by Cloudflare Workers with static assets at the URL above. The deploy settings live in Cloudflare, not in this repository. GitHub Actions (`.github/workflows/webpack.yml`) runs `npm ci && npm run build` on Node 20/22 as a build check.
 
 ## Known limitations
 
