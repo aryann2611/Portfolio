@@ -101,7 +101,7 @@ Static build (`dist/`) served by Cloudflare Workers with static assets at the UR
 
 ## Known limitations
 
-- The Projects section is a placeholder until case studies are added.
+- The Projects section lists a single project (NEXUS); more will be added.
 - The 3D chunk is large (~1.5 MB, ~450 KB gzipped); first load includes shader compilation.
 - Progress (orbs, discovered places) is not persisted between visits.
 - The world is a canvas with keyboard/mouse/touch controls; screen-reader users get the static fallback in `index.html`.
