@@ -1,27 +1,58 @@
-import { FolderGit2 } from "lucide-react";
+import { GithubIcon } from "./icons/GithubIcon";
 import { Reveal } from "./Reveal";
 import { Section } from "./Section";
+
+const PROJECTS = [
+  {
+    name: "NEXUS",
+    tagline: "See what your APIs feel like under pressure.",
+    desc: "Real-time API intelligence platform. Register any HTTP API and an in-process monitoring engine checks it on a schedule, tracking uptime, latency percentiles and incidents across 24h / 7d / 30d reports. Built-in k6 load tests stream live metrics back to the dashboard.",
+    stack: ["React", "TypeScript", "Fastify", "MySQL", "k6", "Recharts", "Tailwind CSS"],
+    repo: "https://github.com/aryann2611/NEXUS-PLATFORM",
+  },
+];
 
 export function Projects() {
   return (
     <Section id="projects" index="03" title="Projects">
-      <Reveal>
-        <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border px-6 py-20 text-center">
-          <FolderGit2 className="text-muted" size={28} />
-          <p className="font-display text-lg text-ink">Projects coming soon</p>
-          <p className="max-w-md text-sm text-muted">
-            This section is being prepared — case studies will be added
-            here shortly. In the meantime, see ongoing work on{" "}
-            <a
-              href="https://github.com/aryann2611"
-              className="text-accent underline underline-offset-4"
-            >
-              GitHub
-            </a>
-            .
-          </p>
-        </div>
-      </Reveal>
+      <div className="space-y-6">
+        {PROJECTS.map((p, i) => (
+          <Reveal key={p.name} delay={i * 0.1}>
+            <article className="rounded-2xl border border-border p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="font-display text-lg font-medium text-ink">
+                    {p.name}
+                  </h3>
+                  <p className="mt-1 text-sm text-accent">{p.tagline}</p>
+                </div>
+                <a
+                  href={p.repo}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`${p.name} on GitHub`}
+                  className="text-muted transition-colors hover:text-ink"
+                >
+                  <GithubIcon size={20} />
+                </a>
+              </div>
+              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-ink/80">
+                {p.desc}
+              </p>
+              <ul className="mt-4 flex flex-wrap gap-2">
+                {p.stack.map((t) => (
+                  <li
+                    key={t}
+                    className="rounded-full border border-border px-3 py-1 font-mono text-xs text-muted"
+                  >
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </article>
+          </Reveal>
+        ))}
+      </div>
     </Section>
   );
 }
