@@ -4,6 +4,18 @@ An explorable portfolio: instead of scrolling through sections, you walk around 
 
 **Live:** https://portfolio.aryans8095.workers.dev
 
+![Island overview](docs/island-overview.png)
+
+## Screenshots
+
+| Day | Night |
+|---|---|
+| ![Day](docs/day.png) | ![Night](docs/night.png) |
+
+| Skill Tower panel | Lighthouse |
+|---|---|
+| ![Skills panel](docs/skills-panel.png) | ![Lighthouse](docs/lighthouse.png) |
+
 | Building | Section |
 |---|---|
 | Home | About |
