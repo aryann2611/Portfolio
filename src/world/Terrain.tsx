@@ -442,7 +442,7 @@ function groundMap() {
 
 export function Grass() {
   const { geo, mat, matrices } = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(0.09, 1, 1, 4);
+    const geo = new THREE.PlaneGeometry(0.09, 1, 1, 2);
     geo.translate(0, 0.5, 0);
     const p = geo.attributes.position, uv = geo.attributes.uv;
     for (let i = 0; i < p.count; i++) p.setX(i, p.getX(i) * (1 - uv.getY(i) * 0.92));
@@ -506,7 +506,7 @@ export function Grass() {
     });
     mat.uniforms.uMap.value = groundMap();
 
-    const count = matchMedia("(pointer: coarse)").matches ? 24000 : 60000;
+    const count = matchMedia("(pointer: coarse)").matches ? 12000 : 32000;
     const r = rng(99);
     const matrices = Array.from({ length: count }, () =>
       mat4((r() - 0.5) * TILE, 0, (r() - 0.5) * TILE, r() * Math.PI, 1, 0.35 + r() * 0.45, 1),

@@ -23,6 +23,8 @@ const DAY_LIGHT = new THREE.Color("#ffd2a1");
 const SUNSET_LIGHT = new THREE.Color("#ff7a3d");
 const MOON_LIGHT = new THREE.Color("#9db4ff");
 
+const SHADOW_RES: [number, number] = matchMedia("(pointer: coarse)").matches || (navigator.hardwareConcurrency ?? 8) <= 4 ? [1024, 1024] : [2048, 2048];
+
 export function Player({ onNearby, onZone }: { onNearby: (l: Landmark | null) => void; onZone: (z: Zone) => void }) {
   const root = useRef<THREE.Group>(null!);
   const rig = useRef<Partial<Rig>>({});
@@ -250,7 +252,7 @@ export function Player({ onNearby, onZone }: { onNearby: (l: Landmark | null) =>
         castShadow
         color="#ffd2a1"
         intensity={3.2}
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={SHADOW_RES}
         shadow-camera-left={-32}
         shadow-camera-right={32}
         shadow-camera-top={32}

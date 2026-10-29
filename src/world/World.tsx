@@ -46,7 +46,7 @@ export default function World() {
   const [sunsetUi, setSunsetUi] = useState<SunsetUi>({ near: false, sitting: false });
   const [fading, setFading] = useState(false);
   const [hq, setHq] = useState(!LOW_END);
-  const [dpr, setDpr] = useState(Math.min(devicePixelRatio, LOW_END ? 1.25 : 2));
+  const [dpr, setDpr] = useState(Math.min(devicePixelRatio, LOW_END ? 1.25 : 1.5));
   /** 0 compiling shaders, 1 rendering first frames under the cover, 2 ready */
   const [stage, setStage] = useState(0);
   const grade = useRef<Grade>({ sat: null, bc: null, vig: null });
@@ -309,7 +309,7 @@ export default function World() {
           <Sunset onUi={setSunsetUi} />
           <Player onNearby={onNearby} onZone={onZone} />
 
-          <EffectComposer multisampling={hq ? 4 : 0}>
+          <EffectComposer multisampling={hq ? 2 : 0}>
             {hq ? <N8AO halfRes aoRadius={2} intensity={2.2} distanceFalloff={1} color="#3a2a1a" /> : <></>}
             <Bloom mipmapBlur intensity={0.85} luminanceThreshold={1} luminanceSmoothing={0.25} />
             <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
