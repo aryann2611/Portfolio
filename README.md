@@ -1,5 +1,7 @@
 # Aryan Singh — 3D Open-World Portfolio
 
+[![CI](https://github.com/aryann2611/Portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/aryann2611/Portfolio/actions/workflows/ci.yml)
+
 An explorable portfolio: instead of scrolling through sections, you walk around a small 3D island. Each building holds a part of the story.
 
 **Live:** https://portfolio.aryans8095.workers.dev

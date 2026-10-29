@@ -6,15 +6,56 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 22 # Vite 8 needs Node >=20.19 / 22.12
+
 jobs:
-  build:
+  lint:
+    name: 🔍 Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22 # Vite 8 needs Node >=20.19 / 22.12
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run build
+      - name: 📦 Install
+        run: npm ci
+      - name: 🔍 Lint
+        run: npm run lint
+
+  build:
+    name: 🏗️ Type-check & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: 📦 Install
+        run: npm ci
+      - name: 🏗️ Build
+        run: npm run build
+      - name: 📊 Bundle size
+        run: |
+          {
+            echo "### 📦 Bundle size"
+            echo '```'
+            du -sh dist
+            du -ah dist/assets | sort -rh | head -6
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: 🚀 Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-dist
+          path: dist
+          retention-days: 7
